@@ -1,0 +1,38 @@
+{
+(* vim: set syntax=ocaml: *)
+(* 補助的な変数、関数、型などの定義 *)
+open World_parser
+}
+
+(* 正規表現の略記 *)
+let space = [' ' '\t']
+let digit = ['0'-'9']
+let lower = ['a'-'z']
+let upper = ['A'-'Z']
+let alpha = lower | upper
+let zenkaku1 = ['?'-'?']
+let zenkaku = zenkaku1 _
+
+rule token = parse
+| "\n"
+	{ token lexbuf }
+| "===初期メッセージ===\n"
+        { SHOKIMESSAGE }
+| "===終了条件===\n"
+        { SHURYOUJOUKEN }
+| "===" zenkaku+ "===\n"
+	{ let s = Lexing.lexeme lexbuf in
+          SECTION (String.sub s 3 (String.length s - 7)) }
+| "---" zenkaku+ "---\n"
+	{ let s = Lexing.lexeme lexbuf in
+          SUBSECTION (String.sub s 3 (String.length s - 7)) }
+| zenkaku+ "\n"
+	{ let s = Lexing.lexeme lexbuf in
+	  TEXT (String.sub s 0 (String.length s - 1)) }
+| "\t" zenkaku+ "\n"
+	{ let s = Lexing.lexeme lexbuf in
+          INDENTED_TEXT (String.sub s 1 (String.length s - 2)) }
+| eof
+	{ EOF }
+| _
+	{ failwith ("unknown token: " ^ Lexing.lexeme lexbuf) }
